@@ -47,6 +47,11 @@ jobs:
           PLAYWRIGHT_BROWSERS_PATH: 0
         run: npm run scrape
 
+      - name: Verify output
+        run: |
+          ls -la public
+          test -f public/index.html
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
