@@ -38,7 +38,7 @@ Optional env vars:
 ## GitHub Pages (scheduled)
 
 This repo includes a GitHub Actions workflow that:
-- Runs hourly (UTC) with a random delay to avoid top‑of‑hour spikes.
+- Runs every 30 minutes (UTC) with a random delay to avoid spike times.
 - Scrapes votes.
 - Publishes `public/leaderboard.html` to GitHub Pages.
 
