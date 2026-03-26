@@ -218,30 +218,21 @@ async function scrapeBand(page, url, errors) {
 
   let votes = null;
   let lastError = null;
-
-  async function readVoteWithRetries() {
-    for (let attempt = 1; attempt <= 3; attempt += 1) {
-      try {
-        await page.locator('span.contest-vote-count').first().waitFor({ timeout: 8000 });
-        const voteText = await page.locator('span.contest-vote-count').first().innerText();
-        const parsed = Number(voteText.replace(/\D/g, '')) || null;
-        if (parsed !== null) return parsed;
-      } catch (err) {
-        lastError = err;
-        await sleep(500 + Math.floor(Math.random() * 500));
-      }
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      await page.locator('span.contest-vote-count').first().waitFor({ timeout: 8000 });
+      const voteText = await page.locator('span.contest-vote-count').first().innerText();
+      votes = Number(voteText.replace(/\D/g, '')) || null;
+      if (votes !== null) break;
+    } catch (err) {
+      lastError = err;
+      await sleep(500 + Math.floor(Math.random() * 500));
     }
-    return null;
   }
 
-  votes = await readVoteWithRetries();
   if (votes === null) {
-    try {
-      await page.reload({ waitUntil: 'domcontentloaded', timeout: 60000 });
-      votes = await readVoteWithRetries();
-    } catch (err) {
-      lastError = lastError || err;
-    }
+    const bodyText = normalizeWhitespace(await page.locator('body').innerText());
+    votes = parseVotesFromText(bodyText);
   }
 
   if (votes === null) {
