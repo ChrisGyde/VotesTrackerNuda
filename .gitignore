@@ -1,0 +1,5 @@
+node_modules/
+.playwright/
+public/leaderboard.html
+data/leaderboard.json
+.DS_Store
