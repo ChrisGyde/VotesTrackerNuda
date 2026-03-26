@@ -1,4 +1,5 @@
 const path = require('path');
+const fs = require('fs');
 const express = require('express');
 const { execFile } = require('child_process');
 
@@ -7,6 +8,7 @@ const PORT = process.env.PORT || 3000;
 
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const SCRAPE_SCRIPT = path.join(__dirname, 'scripts', 'scrape.js');
+const LEADERBOARD_FILE = path.join(PUBLIC_DIR, 'leaderboard.html');
 
 let isRunning = false;
 let nextRunAt = null;
@@ -78,13 +80,36 @@ app.get('/health', (req, res) => {
 });
 
 app.get('/', (req, res) => {
-  res.sendFile(path.join(PUBLIC_DIR, 'leaderboard.html'));
+  if (fs.existsSync(LEADERBOARD_FILE)) {
+    res.sendFile(LEADERBOARD_FILE);
+    return;
+  }
+
+  res.status(200).send(`<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Leaderboard is building</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; color: #222; }
+  </style>
+</head>
+<body>
+  <h1>Leaderboard is building…</h1>
+  <p>The first scrape is still running. Refresh in a minute.</p>
+</body>
+</html>`);
 });
 
 app.listen(PORT, () => {
   log(`Server running at http://localhost:${PORT}`);
 
-  if (process.env.RUN_ON_START === 'true') {
+  if (!fs.existsSync(PUBLIC_DIR)) {
+    fs.mkdirSync(PUBLIC_DIR, { recursive: true });
+  }
+
+  if (!fs.existsSync(LEADERBOARD_FILE) || process.env.RUN_ON_START === 'true') {
     runScrape();
   } else {
     scheduleNextRun();
