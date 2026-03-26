@@ -3,7 +3,7 @@ name: Update Leaderboard
 on:
   schedule:
     # Runs hourly (UTC). We'll add a random delay in the job to avoid top-of-hour spikes.
-    - cron: "0 * * * *"
+    - cron: "0,30 * * * *"
   workflow_dispatch: {}
 
 permissions:
@@ -27,10 +27,10 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Random delay (0-55 min)
+      - name: Random delay (0-25 min)
         if: github.event_name == 'schedule'
         run: |
-          DELAY=$((RANDOM % 3300))
+          DELAY=$((RANDOM % 1500))
           echo "Sleeping for $DELAY seconds..."
           sleep "$DELAY"
 
