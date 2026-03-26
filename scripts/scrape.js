@@ -34,32 +34,6 @@ function nowCET() {
   return new Date().toLocaleString('en-GB', { timeZone: 'Europe/Rome' });
 }
 
-function nextRunWindowCET() {
-  const now = new Date();
-  const nowUtc = new Date(now.getTime());
-  const minutes = nowUtc.getUTCMinutes();
-  const nextBase = new Date(nowUtc.getTime());
-
-  if (minutes < 30) {
-    nextBase.setUTCMinutes(30, 0, 0);
-  } else {
-    nextBase.setUTCHours(nowUtc.getUTCHours() + 1, 0, 0, 0);
-  }
-
-  const windowEnd = new Date(nextBase.getTime() + 25 * 60 * 1000);
-  const format = (date) =>
-    date.toLocaleString('en-GB', {
-      timeZone: 'Europe/Rome',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-
-  return `${format(nextBase)} – ${format(windowEnd)} CET`;
-}
-
 async function collectBandLinks(page, context, errors) {
   const visited = new Set();
   const toVisit = [LIST_URL];
@@ -365,7 +339,6 @@ function renderHtml(rows, updatedAt) {
       </tbody>
     </table>
     <div class="footer">Last updated: ${updatedAt} CET</div>
-    <div class="footer">Next scheduled run window: ${nextRunWindowCET()}</div>
   </main>
 </body>
 </html>`;
