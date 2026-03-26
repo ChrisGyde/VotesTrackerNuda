@@ -38,6 +38,8 @@ jobs:
         run: npm ci
 
       - name: Install Playwright browsers
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: 0
         run: npx playwright install --with-deps chromium
 
       - name: Run scraper
