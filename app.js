@@ -54,7 +54,11 @@ function runScrape() {
   isRunning = true;
   log('Starting scrape...');
 
-  execFile('node', [SCRAPE_SCRIPT], { env: process.env }, (err, stdout, stderr) => {
+  execFile(
+    'node',
+    [SCRAPE_SCRIPT],
+    { env: process.env, timeout: Number(process.env.SCRAPE_TIMEOUT_MS || 15 * 60 * 1000) },
+    (err, stdout, stderr) => {
     if (stdout) process.stdout.write(stdout);
     if (stderr) process.stderr.write(stderr);
 
@@ -66,7 +70,8 @@ function runScrape() {
 
     isRunning = false;
     scheduleNextRun();
-  });
+  }
+  );
 }
 
 app.use(express.static(PUBLIC_DIR));

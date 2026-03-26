@@ -5,6 +5,10 @@ const { chromium } = require('playwright');
 const LIST_URL = 'https://musicstartup.it/vota-1mnext/';
 const OUTPUT_JSON = path.join(__dirname, '..', 'data', 'leaderboard.json');
 const OUTPUT_HTML = path.join(__dirname, '..', 'public', 'leaderboard.html');
+const OUTPUT_DIRS = [
+  path.join(__dirname, '..', 'data'),
+  path.join(__dirname, '..', 'public'),
+];
 
 function normalizeWhitespace(text) {
   return text.replace(/\s+/g, ' ').trim();
@@ -313,7 +317,16 @@ function extractNextPageFromHtml(html) {
 }
 
 async function main() {
-  const browser = await chromium.launch({ headless: true });
+  OUTPUT_DIRS.forEach((dir) => {
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  });
+
+  console.log('Starting scrape job...');
+
+  const browser = await chromium.launch({
+    headless: true,
+    args: ['--no-sandbox', '--disable-dev-shm-usage'],
+  });
   const context = await browser.newContext({
     userAgent:
       'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121 Safari/537.36',
@@ -333,6 +346,7 @@ async function main() {
   if (!links.length) {
     console.error('No band links found on listing page.');
   }
+  console.log(`Found ${links.length} artist links.`);
 
   const results = [];
   for (const url of links) {
