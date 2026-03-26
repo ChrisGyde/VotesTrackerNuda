@@ -7,7 +7,6 @@ const OUTPUT_JSON = path.join(__dirname, '..', 'data', 'leaderboard.json');
 const OUTPUT_HTML = path.join(__dirname, '..', 'public', 'leaderboard.html');
 const OUTPUT_INDEX = path.join(__dirname, '..', 'public', 'index.html');
 const OUTPUT_ERRORS = path.join(__dirname, '..', 'data', 'errors.json');
-const OUTPUT_ERRORS_PUBLIC = path.join(__dirname, '..', 'public', 'errors.json');
 const OUTPUT_DIRS = [
   path.join(__dirname, '..', 'data'),
   path.join(__dirname, '..', 'public'),
@@ -401,9 +400,7 @@ async function main() {
   const html = renderHtml(sorted, payload.updatedAtCET);
   fs.writeFileSync(OUTPUT_HTML, html);
   fs.writeFileSync(OUTPUT_INDEX, html);
-  const errorPayload = { updatedAt: payload.updatedAt, errors };
-  fs.writeFileSync(OUTPUT_ERRORS, JSON.stringify(errorPayload, null, 2));
-  fs.writeFileSync(OUTPUT_ERRORS_PUBLIC, JSON.stringify(errorPayload, null, 2));
+  fs.writeFileSync(OUTPUT_ERRORS, JSON.stringify({ updatedAt: payload.updatedAt, errors }, null, 2));
 
   console.log(`Saved ${sorted.length} entries to ${OUTPUT_JSON}`);
   console.log(`Errors: ${errors.length} (see ${OUTPUT_ERRORS})`);
