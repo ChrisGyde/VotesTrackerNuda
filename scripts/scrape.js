@@ -5,6 +5,7 @@ const { chromium } = require('playwright');
 const LIST_URL = 'https://musicstartup.it/vota-1mnext/';
 const OUTPUT_JSON = path.join(__dirname, '..', 'data', 'leaderboard.json');
 const OUTPUT_HTML = path.join(__dirname, '..', 'public', 'leaderboard.html');
+const OUTPUT_INDEX = path.join(__dirname, '..', 'public', 'index.html');
 const OUTPUT_DIRS = [
   path.join(__dirname, '..', 'data'),
   path.join(__dirname, '..', 'public'),
@@ -374,7 +375,9 @@ async function main() {
   };
 
   fs.writeFileSync(OUTPUT_JSON, JSON.stringify(payload, null, 2));
-  fs.writeFileSync(OUTPUT_HTML, renderHtml(sorted, payload.updatedAtCET));
+  const html = renderHtml(sorted, payload.updatedAtCET);
+  fs.writeFileSync(OUTPUT_HTML, html);
+  fs.writeFileSync(OUTPUT_INDEX, html);
 
   console.log(`Saved ${sorted.length} entries to ${OUTPUT_JSON}`);
   console.log(`Wrote leaderboard to ${OUTPUT_HTML}`);
