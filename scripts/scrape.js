@@ -6,7 +6,6 @@ const LIST_URL = 'https://musicstartup.it/vota-1mnext/';
 const OUTPUT_JSON = path.join(__dirname, '..', 'data', 'leaderboard.json');
 const OUTPUT_HTML = path.join(__dirname, '..', 'public', 'leaderboard.html');
 const OUTPUT_INDEX = path.join(__dirname, '..', 'public', 'index.html');
-const OUTPUT_ERRORS = path.join(__dirname, '..', 'data', 'errors.json');
 const OUTPUT_DIRS = [
   path.join(__dirname, '..', 'data'),
   path.join(__dirname, '..', 'public'),
@@ -23,10 +22,6 @@ function parseVotesFromText(text) {
   const digits = match[1].replace(/\D/g, '');
   if (!digits) return null;
   return Number(digits);
-}
-
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function nowCET() {
@@ -154,8 +149,9 @@ async function collectBandLinks(page, context) {
   return Array.from(bandLinks);
 }
 
-async function scrapeBand(page, url, errors) {
+async function scrapeBand(page, url) {
   await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
+  await page.waitForTimeout(1500);
 
   let name = null;
   try {
@@ -165,17 +161,11 @@ async function scrapeBand(page, url, errors) {
   }
 
   let votes = null;
-  let lastError = null;
-  for (let attempt = 1; attempt <= 3; attempt += 1) {
-    try {
-      await page.locator('span.contest-vote-count').first().waitFor({ timeout: 8000 });
-      const voteText = await page.locator('span.contest-vote-count').first().innerText();
-      votes = Number(voteText.replace(/\D/g, '')) || null;
-      if (votes !== null) break;
-    } catch (err) {
-      lastError = err;
-      await sleep(500 + Math.floor(Math.random() * 500));
-    }
+  try {
+    const voteText = await page.locator('span.contest-vote-count').first().innerText();
+    votes = Number(voteText.replace(/\D/g, '')) || null;
+  } catch (err) {
+    votes = null;
   }
 
   if (votes === null) {
@@ -193,15 +183,6 @@ async function scrapeBand(page, url, errors) {
       votes = parseVotesFromText(chunk);
       if (votes !== null) break;
     }
-  }
-
-  if (votes === null) {
-    errors.push({
-      url,
-      name: name || url.split('/').filter(Boolean).slice(-1)[0],
-      reason: 'vote_count_not_found',
-      error: lastError ? String(lastError) : null,
-    });
   }
 
   return {
@@ -369,17 +350,14 @@ async function main() {
   console.log(`Found ${links.length} artist links.`);
 
   const results = [];
-  const errors = [];
   for (const url of links) {
     try {
       const bandPage = await context.newPage();
-      const data = await scrapeBand(bandPage, url, errors);
+      const data = await scrapeBand(bandPage, url);
       await bandPage.close();
       results.push(data);
-      await sleep(200 + Math.floor(Math.random() * 300));
     } catch (err) {
       results.push({ name: url, url, votes: null, error: String(err) });
-      errors.push({ url, name: url, reason: 'page_error', error: String(err) });
     }
   }
 
@@ -400,10 +378,8 @@ async function main() {
   const html = renderHtml(sorted, payload.updatedAtCET);
   fs.writeFileSync(OUTPUT_HTML, html);
   fs.writeFileSync(OUTPUT_INDEX, html);
-  fs.writeFileSync(OUTPUT_ERRORS, JSON.stringify({ updatedAt: payload.updatedAt, errors }, null, 2));
 
   console.log(`Saved ${sorted.length} entries to ${OUTPUT_JSON}`);
-  console.log(`Errors: ${errors.length} (see ${OUTPUT_ERRORS})`);
   console.log(`Wrote leaderboard to ${OUTPUT_HTML}`);
 }
 
