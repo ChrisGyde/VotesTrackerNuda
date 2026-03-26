@@ -34,7 +34,7 @@ function nowCET() {
   return new Date().toLocaleString('en-GB', { timeZone: 'Europe/Rome' });
 }
 
-async function collectBandLinks(page, context, errors) {
+async function collectBandLinks(page, context) {
   const visited = new Set();
   const toVisit = [LIST_URL];
   const bandLinks = new Set();
@@ -139,15 +139,6 @@ async function collectBandLinks(page, context, errors) {
 
         const response = await context.request.get(nextPage);
         const html = await response.text();
-        if (!response.ok()) {
-          errors.push({
-            url: nextPage,
-            name: 'load_more',
-            reason: 'load_more_failed',
-            status: response.status(),
-            statusText: response.statusText(),
-          });
-        }
 
         extractArtistLinksFromHtml(html).forEach((link) => bandLinks.add(link));
 
@@ -165,23 +156,7 @@ async function collectBandLinks(page, context, errors) {
 }
 
 async function scrapeBand(page, url, errors) {
-  let responseStatus = null;
-  let responseStatusText = null;
-  try {
-    const resp = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
-    if (resp) {
-      responseStatus = resp.status();
-      responseStatusText = resp.statusText();
-    }
-  } catch (err) {
-    errors.push({
-      url,
-      name: url.split('/').filter(Boolean).slice(-1)[0],
-      reason: 'page_goto_failed',
-      error: String(err),
-    });
-    throw err;
-  }
+  await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
 
   let name = null;
   try {
@@ -227,8 +202,6 @@ async function scrapeBand(page, url, errors) {
       name: name || url.split('/').filter(Boolean).slice(-1)[0],
       reason: 'vote_count_not_found',
       error: lastError ? String(lastError) : null,
-      status: responseStatus,
-      statusText: responseStatusText,
     });
   }
 
@@ -325,7 +298,7 @@ function renderHtml(rows, updatedAt) {
 <body>
   <main>
     <h1>Band Votes Leaderboard</h1>
-    <p>Sorted by highest votes. Updated every 30 minutes.</p>
+    <p>Sorted by highest votes. Updated daily.</p>
     <table>
       <thead>
         <tr>
@@ -390,14 +363,14 @@ async function main() {
 
   const page = await context.newPage();
 
-  const results = [];
-  const errors = [];
-
-  const links = await collectBandLinks(page, context, errors);
+  const links = await collectBandLinks(page, context);
   if (!links.length) {
     console.error('No band links found on listing page.');
   }
   console.log(`Found ${links.length} artist links.`);
+
+  const results = [];
+  const errors = [];
   for (const url of links) {
     try {
       const bandPage = await context.newPage();
