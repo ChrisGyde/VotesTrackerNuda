@@ -193,39 +193,20 @@ async function collectBandLinks(page, context, errors) {
 async function scrapeBand(page, url, errors) {
   let responseStatus = null;
   let responseStatusText = null;
-
-  async function tryGoto(attempts = 2) {
-    for (let attempt = 1; attempt <= attempts; attempt += 1) {
-      try {
-        const resp = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
-        if (resp) {
-          responseStatus = resp.status();
-          responseStatusText = resp.statusText();
-        }
-        return true;
-      } catch (err) {
-        if (attempt === attempts) {
-          errors.push({
-            url,
-            name: url.split('/').filter(Boolean).slice(-1)[0],
-            reason: 'page_goto_failed',
-            error: String(err),
-          });
-          return false;
-        }
-        await sleep(1000 + Math.floor(Math.random() * 1000));
-      }
+  try {
+    const resp = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
+    if (resp) {
+      responseStatus = resp.status();
+      responseStatusText = resp.statusText();
     }
-    return false;
-  }
-
-  const navigated = await tryGoto(2);
-  if (!navigated) {
-    return {
-      name: url.split('/').filter(Boolean).slice(-1)[0],
+  } catch (err) {
+    errors.push({
       url,
-      votes: null,
-    };
+      name: url.split('/').filter(Boolean).slice(-1)[0],
+      reason: 'page_goto_failed',
+      error: String(err),
+    });
+    throw err;
   }
 
   let name = null;
@@ -293,7 +274,7 @@ async function scrapeBand(page, url, errors) {
   };
 }
 
-function renderHtml(rows, updatedAt, errorCount) {
+function renderHtml(rows, updatedAt) {
   const tableRows = rows
     .map(
       (row, index) => `
@@ -394,7 +375,6 @@ function renderHtml(rows, updatedAt, errorCount) {
     </table>
     <div class="footer">Last updated: ${updatedAt} CET</div>
     <div class="footer">Next scheduled run window: ${nextRunWindowCET()}</div>
-    <div class="footer">Errors this run: ${errorCount} (see errors.json)</div>
   </main>
 </body>
 </html>`;
@@ -481,7 +461,7 @@ async function main() {
   };
 
   fs.writeFileSync(OUTPUT_JSON, JSON.stringify(payload, null, 2));
-  const html = renderHtml(sorted, payload.updatedAtCET, errors.length);
+  const html = renderHtml(sorted, payload.updatedAtCET);
   fs.writeFileSync(OUTPUT_HTML, html);
   fs.writeFileSync(OUTPUT_INDEX, html);
   const errorPayload = { updatedAt: payload.updatedAt, errors };
