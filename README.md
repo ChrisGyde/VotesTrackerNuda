@@ -34,3 +34,12 @@ Optional env vars:
 - `RUN_ON_START=true` to scrape immediately on launch.
 - `RANDOM_MINUTE_MIN=10` / `RANDOM_MINUTE_MAX=50` to change the random minute window.
 - `PORT=3000` to change the server port.
+
+## GitHub Pages (scheduled)
+
+This repo includes a GitHub Actions workflow that:
+- Runs hourly (UTC) with a random delay to avoid top‑of‑hour spikes.
+- Scrapes votes.
+- Publishes `public/leaderboard.html` to GitHub Pages.
+
+After pushing, go to your GitHub repo → Settings → Pages and set the source to **GitHub Actions**.
